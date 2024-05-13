@@ -325,3 +325,19 @@ CREATE OR REPLACE FUNCTION COOLSTUFF.MOOD (
     END; 
 
 
+-- A function around calling WatsonX.ai using HTTP functions
+CREATE OR REPLACE FUNCTION COOLSTUFF.WATSONXAIHTTP(TEXT CLOB(1K) CCSID 1208)
+  RETURNS CLOB(1K) CCSID 1208 
+  LANGUAGE SQL
+  BEGIN
+    DECLARE URL, REQUEST, OPTIONS CLOB(1000) CCSID 1208;
+ 
+    RETURN
+      (values JSON_VALUE(
+       QSYS2.HTTP_POST(
+       'https://us-south.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-07-07',
+       '{ "model_id": "meta-llama/llama-2-13b-chat","input": "' CONCAT TEXT CONCAT '", "parameters": { "max_new_tokens": 100, "time_limit": 1000 },"space_id": "<your_spaceid_here>" }',
+       '{"headers":{"Authorization":"Bearer <your_token_here>", "Content-Type": "application/json", "Accept": "application/json"}}'),
+       '$.results.generated_text'
+       RETURNING VARCHAR(1000)));
+  END;
